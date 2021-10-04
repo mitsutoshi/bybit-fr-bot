@@ -13,4 +13,4 @@ bybit = "*"
 python_version = "3.9"
 
 [scripts]
-frbot = "python frbot.py"
+main = "python main.py"

@@ -8,4 +8,4 @@ RUN mkdir ./logs/
 COPY *.py logging.conf Pipfile Pipfile.lock .env ./
 RUN pipenv install
 
-ENTRYPOINT pipenv run frbot
+ENTRYPOINT pipenv run main
