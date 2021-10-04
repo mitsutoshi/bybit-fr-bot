@@ -212,13 +212,14 @@ class FundingRateBot():
 
         # balance
         balance = self.client.private_wallet_balance()
-        s = '%s: balance=%s, unrealised_pnl=%s'
+        s = '%s: balance=%.6f, unrealised_pnl=%.6f'
         b_s = [s % (k, v['wallet_balance'], v['unrealised_pnl']) for k, v in balance.items() if v['wallet_balance']]
 
-        msg = f"""bybit-fr-bot maintained result (datetime.now()).
+        now = datetime.now(timezone.utc)
+        msg = f"""bybit-fr-bot maintained result ({now.strftime('%Y-%m-%d %H:%M:%S')} UTC).
 ```
 [PrevFR]
-{fr_s} ({fr_time.isoformat()})
+{fr_s} ({fr_time.strftime('%Y-%m-%d %H:%M:%S')} UTC)
 
 [Balance(derivative)]
 {', '.join(b_s)}
