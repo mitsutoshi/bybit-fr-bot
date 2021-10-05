@@ -2,7 +2,7 @@
 
 LOG_DIR=/var/log
 TZ=Asia/Tokyo
-IMAGER_NAME=bybit-fr-bot
+IMAGE_NAME=bybit-fr-bot
 CONTAINER_NAME=$IMAGE_NAME
 
 docker stop frbot > /dev/null 2>&1
