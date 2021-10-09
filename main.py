@@ -2,10 +2,10 @@ import sys
 import json
 import signal
 import os
-import threading
 import time
 from datetime import datetime, timezone
 from logging import config, getLogger
+from threading import Thread
 
 import requests
 
@@ -51,7 +51,7 @@ class FundingRateBot():
         return res['order_id']
 
     def create_perp_short(self, symbol: str):
-        logger.info(f'Create short position of {symbol}.')
+        logger.info(f"Start to create short position of {symbol}")
 
         # create new sell order
         price = self.get_perp_best_price(symbol, 'Sell')
@@ -164,6 +164,7 @@ class FundingRateBot():
                     logger.info('No need to update order.')
 
     def maintain_position(self, symbol: str) -> None:
+        logger.info(f"Start to maintain position.")
 
         # get previous fr
         prev_fr = self.client.public_funding_prevfundingrate(symbol=symbol)
@@ -183,7 +184,6 @@ class FundingRateBot():
         if fr >= self.min_entry_fr:
             self.create_perp_short(symbol)
 
-        # send notification
         msg = f"{symbol}'s previous FR is {fr:.6%} and will be executed at {fr_t.isoformat()}. Current position size is {pos['size']}."
         logger.info(msg)
 
@@ -240,27 +240,34 @@ class FundingRateBot():
         send_message(m)
 
         BEFORE_FR_HOURS = [7, 15, 23]
-        START_MIN = 45
-
+        FR_HOURS = [0, 8, 16]
         last_maintened_time = None
+        last_created_at = None
+
         while self.alive:
 
+            threads = []
+            target = None
+            args = None
             now = datetime.now(tz=timezone.utc)
-            if now.hour in BEFORE_FR_HOURS and now.minute >= START_MIN \
-                    and (not last_maintened_time or now.hour != last_maintened_time.hour):
-                logger.info(f"Start to maintain position.")
 
-                threads = []
-                for symbol in INV_PERP_SYMBOLS:
-                    t = threading.Thread(target=self.maintain_position, args=(symbol,))
-                    threads.append(t)
+            if now.hour in BEFORE_FR_HOURS and now.minute >= 50 \
+                    and (not last_maintened_time or now.hour != last_maintened_time.hour):
+                threads = [Thread(target=self.maintain_position, args=(s,)) for s in INV_PERP_SYMBOLS]
+                last_maintened_time = now
+
+            elif now.hour in FR_HOURS and 0 < now.minute < 10 \
+                    and (not last_created_at or now.hour != last_created_at.hour):
+                threads = [Thread(target=self.create_perp_short, args=(s,)) for s in INV_PERP_SYMBOLS]
+                last_created_at = now
+
+            if threads:
+                for t in threads:
                     t.start()
                 for t in threads:
                     t.join()
-
-                last_maintened_time = now
                 self.send_pos_maintenance_result()
-                logger.info(f"Sleep until next funding time approaches.")
+                logger.info(f"Sleeping...")
 
             time.sleep(5)
 
