@@ -251,7 +251,7 @@ class FundingRateBot():
             args = None
             now = datetime.now(tz=timezone.utc)
 
-            if now.hour in BEFORE_FR_HOURS and now.minute >= 50 \
+            if now.hour in BEFORE_FR_HOURS and now.minute >= 55 \
                     and (not last_maintened_time or now.hour != last_maintened_time.hour):
                 threads = [Thread(target=self.maintain_position, args=(s,)) for s in INV_PERP_SYMBOLS]
                 last_maintened_time = now
